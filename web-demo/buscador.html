@@ -1,0 +1,380 @@
+<title>Buscador de Autopeças</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+  /* Layout: coluna única de oficina — busca no topo, leitura do pedido em chips, resultados em fichas */
+  :root {
+    --bg: #f3f5f7; --surface: #ffffff; --fg: #15191f; --muted: #5d6673; --line: #dde2e8;
+    --accent: #0f5fa8; --accent-fg: #ffffff; --chip: #e9edf2;
+    --ok: #1d7a3a; --okbg: #e3f3e8; --warn: #8a5a00; --warnbg: #fdf1d3; --bad: #b8321f; --badbg: #fbe6e1;
+    --display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+    --body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1216; --surface: #181c22; --fg: #e6e9ed; --muted: #98a1ad; --line: #2a3039;
+      --accent: #5ea6ee; --accent-fg: #0b1420; --chip: #232932;
+      --ok: #6fd18c; --okbg: #15301e; --warn: #e6b54a; --warnbg: #33290f; --bad: #f08d79; --badbg: #3a1c16;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1216; --surface: #181c22; --fg: #e6e9ed; --muted: #98a1ad; --line: #2a3039;
+    --accent: #5ea6ee; --accent-fg: #0b1420; --chip: #232932;
+    --ok: #6fd18c; --okbg: #15301e; --warn: #e6b54a; --warnbg: #33290f; --bad: #f08d79; --badbg: #3a1c16;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font: 15px/1.5 var(--body); }
+  main { max-width: 960px; margin: 0 auto; padding-block: 28px 64px;
+         padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header { display: grid; gap: 4px; margin-bottom: 18px; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font: 700 34px/1.1 var(--display); margin: 0; text-wrap: balance; }
+  .sub { color: var(--muted); margin: 0; max-width: 65ch; }
+  form { display: flex; gap: 8px; flex-wrap: wrap; }
+  #q { flex: 1 1 280px; min-width: 0; padding: 12px 14px; font: 16px var(--body); border-radius: 10px;
+       border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+  #q:focus-visible, button:focus-visible, select:focus-visible, .ex:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button { padding: 12px 20px; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-fg);
+           font: 600 15px var(--body); cursor: pointer; }
+  .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; font-size: 13px; color: var(--muted); align-items: center; }
+  .ex { border: 1px solid var(--line); background: var(--surface); color: var(--accent); border-radius: 999px;
+        padding: 3px 10px; font: 13px var(--body); cursor: pointer; }
+  .controls { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin: 14px 0 4px; color: var(--muted); font-size: 14px; }
+  select { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 14px var(--body); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 10px; }
+  .chip { background: var(--chip); border-radius: 999px; padding: 4px 11px; font-size: 13px; }
+  .chip b { font-weight: 600; }
+  .note { background: var(--warnbg); color: var(--warn); padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 14px; }
+  .stat { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
+  .stat small { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .stat strong { font: 700 22px var(--display); font-variant-numeric: tabular-nums; }
+  .list { display: grid; gap: 10px; }
+  .card { display: grid; grid-template-columns: 1fr auto; gap: 14px; background: var(--surface);
+          border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .card.best { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+  .card > div { min-width: 0; }
+  .title { font-weight: 600; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 6px; }
+  .t-ok { background: var(--okbg); color: var(--ok); }
+  .t-warn { background: var(--warnbg); color: var(--warn); }
+  .t-bad { background: var(--badbg); color: var(--bad); }
+  .t-neutral { background: var(--chip); color: var(--muted); }
+  .price { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .price strong { display: block; font: 700 24px var(--display); }
+  .price small { display: block; color: var(--muted); font-size: 12px; }
+  .score { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .bar { height: 4px; width: 96px; background: var(--chip); border-radius: 2px; margin: 3px 0 0 auto; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+  .empty { text-align: center; color: var(--muted); padding: 36px 0; }
+  @media (max-width: 560px) {
+    .card { grid-template-columns: 1fr; }
+    .price { text-align: left; }
+    .bar { margin-left: 0; }
+  }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Demonstração no navegador</span>
+    <h1>Buscador de Autopeças</h1>
+    <p class="sub">Descreva a peça e o veículo. O buscador entende o pedido, confere a compatibilidade de cada anúncio e ordena pelo melhor custo-benefício.</p>
+  </header>
+
+  <form id="f">
+    <input id="q" type="search" placeholder="ex.: pastilha de freio dianteira gol 1.0 2012" autocomplete="off" aria-label="O que você procura">
+    <button type="submit">Buscar</button>
+  </form>
+  <div class="examples">Exemplos:
+    <button type="button" class="ex">pastilha de freio dianteira gol 1.0 2012 cobreq</button>
+    <button type="button" class="ex">amortecedor dianteiro gol 2014</button>
+    <button type="button" class="ex">farol gol 2010 lado direito</button>
+    <button type="button" class="ex">kit embreagem onix 2016</button>
+    <button type="button" class="ex">filtro de oleo gol 1.0</button>
+  </div>
+  <div class="controls">
+    <label for="sort">Ordenar por</label>
+    <select id="sort">
+      <option value="valor">Melhor custo-benefício</option>
+      <option value="preco">Menor preço (com frete)</option>
+      <option value="relevancia">Mais compatível</option>
+    </select>
+    <label><input type="checkbox" id="compat" checked> Esconder incompatíveis</label>
+  </div>
+
+  <div id="out"></div>
+</main>
+
+<script>
+// ---------- texto ----------
+const normalize = (s) => (s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const tokens = (s) => (normalize(s).match(/[a-z0-9]+(?:[.,][0-9]+)?/g) || []).map((t) => t.replace(",", "."));
+function stem(w) {
+  if (w.length <= 3 || /^\d+$/.test(w)) return w;
+  if (w.endsWith("oes") || w.endsWith("aes")) return w.slice(0, -3) + "ao";
+  if (/(res|zes|les)$/.test(w) && w.length > 5) return w.slice(0, -2);
+  if (w.endsWith("s")) return w.slice(0, -1);
+  return w;
+}
+const hasPhrase = (toks, p) => (" " + toks.join(" ") + " ").includes(" " + p + " ");
+
+// ---------- conhecimento ----------
+const BY_BRAND = {
+  Volkswagen: "gol voyage saveiro fox crossfox spacefox polo virtus up jetta golf|t cross|nivus|amarok|tiguan|parati|kombi|fusca|taos",
+  Chevrolet: "onix prisma cruze celta corsa cobalt spin s10 tracker montana agile classic|vectra|astra|meriva|zafira|equinox|trailblazer|captiva",
+  Fiat: "palio uno strada siena toro argo mobi cronos punto idea doblo fiorino pulse fastback|grand siena|linea|bravo|freemont|weekend",
+  Ford: "ka fiesta ecosport focus ranger fusion territory|courier|edge|maverick|bronco",
+  Hyundai: "hb20 hb20s creta tucson i30 ix35|azera|elantra|santa fe",
+  Toyota: "corolla etios yaris hilux sw4|corolla cross|rav4|prius",
+  Honda: "civic fit city|hr v|wr v|cr v|accord",
+  Renault: "sandero logan duster kwid clio captur oroch|stepway|fluence|megane|master",
+  Nissan: "march versa kicks sentra frontier|livina|tiida",
+  Peugeot: "206 207 208 3008 307 308 408|partner|expert",
+  Citroen: "c3 c4|c4 cactus|c4 lounge|aircross|jumpy",
+  Jeep: "renegade compass commander wrangler",
+  Mitsubishi: "l200 pajero outlander asx|lancer|eclipse cross",
+};
+const MODELS = {};
+for (const [brand, spec] of Object.entries(BY_BRAND)) {
+  const [single, ...multi] = spec.split("|");
+  for (const n of [...single.split(" "), ...multi]) MODELS[n.trim()] = brand;
+}
+const MODEL_NAMES = Object.keys(MODELS).sort((a, b) => b.length - a.length);
+const BRANDS = { vw: "Volkswagen", volkswagen: "Volkswagen", volks: "Volkswagen", chevrolet: "Chevrolet", gm: "Chevrolet",
+  fiat: "Fiat", ford: "Ford", hyundai: "Hyundai", toyota: "Toyota", honda: "Honda", renault: "Renault", nissan: "Nissan",
+  peugeot: "Peugeot", citroen: "Citroen", jeep: "Jeep", mitsubishi: "Mitsubishi" };
+const PART_BRANDS = { bosch: "Bosch", cofap: "Cofap", monroe: "Monroe", nakata: "Nakata", trw: "TRW", frasle: "Fras-le",
+  fras: "Fras-le", cobreq: "Cobreq", valeo: "Valeo", skf: "SKF", ngk: "NGK", mahle: "Mahle", tecfil: "Tecfil", fram: "Fram",
+  wega: "Wega", mann: "Mann", sachs: "Sachs", gates: "Gates", dayco: "Dayco", continental: "Continental", syl: "Syl",
+  magneti: "Magneti Marelli", marelli: "Magneti Marelli", delphi: "Delphi", jurid: "Jurid", kayaba: "Kayaba", luk: "LUK" };
+const STOPWORDS = new Set("de do da dos das para pra p com e o a os as em no na ano modelo carro veiculo um uma ate ao lado motor".split(" "));
+const SOFT = new Set("kit jogo par unidade peca original novo nova conjunto jg".split(" "));
+const SYN = { gasolina: ["combustivel"], combustivel: ["gasolina"], lona: ["sapata"], sapata: ["lona"], coxim: ["calco"],
+  calco: ["coxim"], bieleta: ["tirante"], rolamento: ["cubo"], farol: ["optico"], embreagem: ["embreage"] };
+const POSITIONS = { dianteiro: "dianteira", dianteira: "dianteira", diant: "dianteira", traseiro: "traseira", traseira: "traseira", tras: "traseira" };
+const SIDES = { esquerdo: "esquerdo", esquerda: "esquerdo", le: "esquerdo", direito: "direito", direita: "direito", ld: "direito" };
+const ENGINE_TAGS = new Set("8v 16v 12v turbo tsi flex diesel aspirado mpi msi gti".split(" "));
+const ACCESSORY = new Set("parafuso porca arruela pino presilha grampo trava reparo suporte sensor capa adesivo chaveiro protetor bucha borracha chicote soquete lampada moldura aplique emblema guarnicao miniatura".split(" "));
+const MAX_YEAR = new Date().getFullYear() + 1;
+const title = (s) => s.replace(/\b\w/g, (c) => c.toUpperCase());
+
+// ---------- interpretação da busca ----------
+const isYear = (t) => /^\d{4}$/.test(t) && +t >= 1970 && +t <= MAX_YEAR;
+function parseQuery(raw) {
+  const pq = { raw, partTerms: [], vehicle: {}, position: null, side: null, oem: [], partBrand: null };
+  const toks = tokens(raw), used = new Set();
+  for (const m of raw.toUpperCase().matchAll(/\b(?:(?=[A-Z0-9\-]*\d)(?=[A-Z0-9\-]*[A-Z])[A-Z0-9\-]{6,}|\d{7,})\b/g))
+    if (!isYear(m[0])) pq.oem.push(m[0].replace(/-/g, ""));
+  const oemNorm = new Set(pq.oem.map((c) => c.toLowerCase()));
+  const joined = toks.join(" ");
+  for (const name of MODEL_NAMES) {
+    const m = new RegExp("(?:^| )" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?: |$)").exec(joined);
+    if (!m) continue;
+    const start = (joined.slice(0, m.index).match(/ /g) || []).length + (m.index > 0 ? 1 : 0);
+    const idx = name.split(" ").map((_, k) => start + k);
+    if (idx.some((i) => used.has(i))) continue;
+    pq.vehicle.model = name; pq.vehicle.brand = MODELS[name]; idx.forEach((i) => used.add(i)); break;
+  }
+  toks.forEach((t, i) => {
+    if (used.has(i)) return;
+    if (BRANDS[t]) { pq.vehicle.brand = pq.vehicle.brand || BRANDS[t]; used.add(i); }
+    else if (isYear(t)) { if (!pq.vehicle.year) pq.vehicle.year = +t; used.add(i); }
+    else if (/^[1-6]\.[0-9]$/.test(t)) { pq.vehicle.engine = t; used.add(i); }
+    else if (ENGINE_TAGS.has(t)) used.add(i);
+    else if (POSITIONS[t]) { pq.position = POSITIONS[t]; used.add(i); }
+    else if (SIDES[t]) { pq.side = SIDES[t]; used.add(i); }
+    else if (PART_BRANDS[t]) { pq.partBrand = PART_BRANDS[t]; used.add(i); }
+    else if (oemNorm.has(t) || STOPWORDS.has(t)) used.add(i);
+  });
+  pq.partTerms = toks.filter((t, i) => !used.has(i) && !/^\d+$/.test(t)).map(stem);
+  return pq;
+}
+
+// ---------- compatibilidade e ranking ----------
+const fullYear = (y) => y.length === 4 ? +y : (+y <= MAX_YEAR % 100 ? 2000 + +y : 1900 + +y);
+function yearsInTitle(t) {
+  t = normalize(t);
+  const ys = new Set();
+  for (const m of t.matchAll(/\b(\d{2}|\d{4})\s*(?:a|ate|ao|\/|-|~)\s*(\d{2}|\d{4})\b/g)) {
+    const a = fullYear(m[1]), b = fullYear(m[2]);
+    if (a >= 1980 && a <= b && b <= MAX_YEAR && b - a <= 30) for (let y = a; y <= b; y++) ys.add(y);
+  }
+  for (const m of t.matchAll(/\b(\d{2}|\d{4})\s*(?:em diante|\+|ate hoje|a atual|ao atual)/g)) {
+    const a = fullYear(m[1]);
+    if (a >= 1980 && a <= MAX_YEAR) for (let y = a; y <= MAX_YEAR; y++) ys.add(y);
+  }
+  for (const m of t.matchAll(/\b((?:19[89]|20[0-3])\d)\b/g)) if (+m[1] <= MAX_YEAR) ys.add(+m[1]);
+  return ys;
+}
+const termPresent = (t, stems) => stems.has(t) || (SYN[t] || []).some((s) => stems.has(s));
+
+function scoreOffer(pq, o) {
+  const toks = tokens(o.title + " " + (o.brand || "")), stems = new Set(toks.map(stem));
+  const matches = [], warnings = [];
+  let score = 0, incompatible = false, hits = 0;
+  const req = pq.partTerms.filter((t) => !SOFT.has(t));
+  if (req.length) {
+    const hit = req.filter((t) => termPresent(t, stems)).length;
+    score += 45 * hit / req.length;
+    if (hit === req.length) matches.push("peça");
+    if (!termPresent(req[0], stems)) { score -= 30; warnings.push(`Parece ser outra peça (não cita “${req[0]}”)`); }
+    const extras = [...stems].filter((s) => ACCESSORY.has(s) && !req.includes(s));
+    if (extras.length) { score -= 35; warnings.push("Parece acessório/componente: " + extras.join(", ")); }
+  } else score += 45;
+
+  const ref = normalize(o.ref || "").replace(/[-\s]/g, ""), tc = normalize(o.title).replace(/[-\s]/g, "");
+  const code = pq.oem.find((c) => c.toLowerCase() === ref || tc.includes(c.toLowerCase()));
+  if (code) { score += 35; matches.push("código " + code); }
+
+  const v = pq.vehicle;
+  if (v.model) {
+    if (hasPhrase(toks, v.model)) { score += 20; hits++; matches.push(title(v.model)); }
+    else {
+      const other = MODEL_NAMES.filter((m) => m.length > 2 && hasPhrase(toks, m));
+      if (other.length) { score -= 15; incompatible = true; warnings.push("Anúncio cita outro(s) modelo(s): " + other.slice(0, 3).map(title).join(", ")); }
+      else warnings.push("Não cita o modelo " + title(v.model));
+    }
+  }
+  if (v.year) {
+    const ys = yearsInTitle(o.title);
+    if (ys.has(v.year)) { score += 15; hits++; matches.push("ano " + v.year); }
+    else if (ys.size) { score -= 25; incompatible = true; warnings.push(`Anos do anúncio: ${Math.min(...ys)}–${Math.max(...ys)} (não inclui ${v.year})`); }
+  }
+  if (v.engine) {
+    const eng = new Set(toks.filter((t) => /^[1-6]\.[0-9]$/.test(t)));
+    if (eng.has(v.engine)) { score += 5; matches.push("motor " + v.engine); }
+    else if (eng.size) { score -= 10; warnings.push("Motor do anúncio: " + [...eng].join(", ")); }
+  }
+  const tpos = new Set(toks.filter((t) => POSITIONS[t]).map((t) => POSITIONS[t]));
+  if (pq.position) {
+    if (tpos.has(pq.position)) { score += 10; matches.push(pq.position); }
+    else if (tpos.size) { score -= 30; incompatible = true; warnings.push("Posição do anúncio: " + [...tpos].join(", ")); }
+  }
+  const tsides = new Set(toks.filter((t) => SIDES[t]).map((t) => SIDES[t]));
+  if (pq.side && tsides.size && !tsides.has(pq.side)) { score -= 20; incompatible = true; warnings.push("Lado do anúncio: " + [...tsides].join(", ")); }
+  if (pq.partBrand && normalize(o.title + " " + (o.brand || "")).includes(normalize(pq.partBrand))) { score += 5; matches.push(pq.partBrand); }
+  if (o.used) { score -= 15; warnings.push("Peça usada"); }
+
+  const expected = (v.model ? 1 : 0) + (v.year ? 1 : 0);
+  const compat = incompatible ? "incompativel" : (expected && hits === expected) ? "confirmada" : hits ? "provavel" : "verificar";
+  return { o, total: +(o.price + (o.ship || 0)).toFixed(2), relevance: Math.max(0, Math.min(100, score)), value: 0, compat, matches, warnings };
+}
+
+function rank(pq, offers, sort, onlyCompat) {
+  let rel = offers.map((o) => scoreOffer(pq, o)).filter((r) => r.relevance >= 40);
+  if (onlyCompat) rel = rel.filter((r) => r.compat !== "incompativel");
+  const stats = { found: offers.length, relevant: rel.length };
+  if (rel.length) {
+    const tot = rel.map((r) => r.total).sort((a, b) => a - b);
+    const mid = tot.length % 2 ? tot[(tot.length - 1) / 2] : (tot[tot.length / 2 - 1] + tot[tot.length / 2]) / 2;
+    Object.assign(stats, { min: tot[0], median: mid });
+    for (const r of rel) {
+      let val = r.relevance * (0.6 + 0.4 * tot[0] / r.total);
+      if (r.total < 0.3 * mid && rel.length >= 4) { r.warnings.push("Preço muito abaixo da média: confira se é a peça completa"); val -= 15; }
+      if (r.o.ship == null) r.warnings.push("Frete não informado");
+      if (r.compat === "incompativel") val -= 30;
+      r.value = Math.max(0, val);
+    }
+  }
+  const cmp = { preco: (a, b) => (a.compat === "incompativel") - (b.compat === "incompativel") || a.total - b.total,
+                relevancia: (a, b) => b.relevance - a.relevance || a.total - b.total }[sort]
+              || ((a, b) => b.value - a.value || a.total - b.total);
+  rel.sort(cmp);
+  return { results: rel, stats };
+}
+
+// ---------- anúncios de demonstração (fictícios) ----------
+const CATALOG = [
+  ["Loja Demo A", "Pastilha Freio Dianteira Gol G5 G6 1.0 1.6 2008 a 2016 Cobreq N-325", 89.90, 0, "Cobreq", "N325"],
+  ["Loja Demo B", "Jogo Pastilha De Freio Dianteiro Vw Gol Voyage Fox 2009/2015 Bosch", 112.50, 18.90, "Bosch", "0986BB0597"],
+  ["Loja Demo C", "Pastilha Freio Dianteira Gol G4 2005 a 2008 Syl", 64.90, 15.00, "Syl"],
+  ["Loja Demo A", "Pastilha Freio Traseira Golf 1.6 2010/2013", 79.90, 0],
+  ["Loja Demo D", "Kit Pastilha Freio Dianteira Fras-le Gol Saveiro 2012 2013 2014", 98.00, null, "Fras-le", "PD/580"],
+  ["Loja Demo E", "Pastilha de Freio Dianteira Universal Cerâmica", 39.90, 12.00],
+  ["Loja Demo B", "Parafuso Pinça Pastilha Freio Gol", 9.90, 8.00],
+  ["Loja Demo C", "Pastilha Freio Dianteira Onix Prisma 1.0 1.4 2013 a 2019 TRW", 105.00, 0, "TRW"],
+  ["Loja Demo D", "Disco De Freio Dianteiro Gol G5 G6 2008 a 2016 Par Fremax", 189.90, 0, "Fremax"],
+  ["Loja Demo E", "Pastilha Freio Dianteira Gol 1.0 Cobreq Usada Bom Estado", 35.00, 20.00, "Cobreq"],
+  ["Loja Demo A", "Amortecedor Dianteiro Gol G5 G6 2008 a 2016 Cofap Turbogas Par", 459.90, 0, "Cofap"],
+  ["Loja Demo B", "Amortecedor Traseiro Gol G5 G6 2008/2016 Cofap Par", 329.90, 25.00, "Cofap"],
+  ["Loja Demo C", "Amortecedores Dianteiros Gol G5 2009 a 2013 Nakata", 389.00, 0, "Nakata"],
+  ["Loja Demo D", "Amortecedor Dianteiro Onix 2013 a 2019 Monroe", 410.00, 0, "Monroe"],
+  ["Loja Demo E", "Filtro de Óleo Gol Fox Polo 1.0 1.6 Tecfil PSL55", 22.90, 14.90, "Tecfil", "PSL55"],
+  ["Loja Demo A", "Filtro Óleo Mann W712/95 Gol 1.0 8v 2008 em diante", 27.50, 0, "Mann", "W71295"],
+  ["Loja Demo B", "Filtro De Oleo Onix Prisma Cobalt Spin Tecfil PSL619", 24.90, 9.90, "Tecfil", "PSL619"],
+  ["Loja Demo C", "Kit Correia Dentada Tensor Gol 1.0 8v 2008 a 2016 Gates", 219.90, 0, "Gates"],
+  ["Loja Demo D", "Correia Dentada Gol 1.6 Power Contitech", 69.90, 15.00, "Continental"],
+  ["Loja Demo E", "Vela de Ignição NGK BKR6E Gol 1.0 1.6 8v Jogo 4 un", 79.90, 0, "NGK", "BKR6E"],
+  ["Loja Demo A", "Bomba Combustível Gol G5 Flex 2009/2014 Bosch", 249.00, 0, "Bosch"],
+  ["Loja Demo B", "Bomba de Gasolina Gol Fox Polo Flex Vdo", 199.90, 22.00, "VDO"],
+  ["Loja Demo C", "Kit Embreagem Gol 1.0 8v G5 G6 2008 a 2014 Sachs", 489.00, 0, "Sachs"],
+  ["Loja Demo D", "Kit Embreagem Onix 1.0 2013 a 2019 Luk", 520.00, 0, "LUK"],
+  ["Loja Demo E", "Kit Embreagem Onix Prisma 1.4 2012/2016 Valeo", 455.00, 29.90, "Valeo"],
+  ["Loja Demo E", "Farol Dianteiro Gol G5 2009 2010 2011 2012 Lado Esquerdo", 289.00, 35.00],
+  ["Loja Demo A", "Farol Gol G5 2009 a 2012 Lado Direito", 279.00, 0],
+].map(([store, title, price, ship, brand, ref]) => ({ store, title, price, ship, brand, ref, used: /usad/i.test(title) }));
+
+function fetchOffers(pq) {
+  const wanted = new Set(pq.partTerms.length ? pq.partTerms : tokens(pq.raw).map(stem));
+  return CATALOG.filter((o) => tokens(o.title).some((t) => wanted.has(stem(t))));
+}
+
+// ---------- interface ----------
+const $ = (s) => document.querySelector(s);
+const brl = (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const COMPAT = { confirmada: ["t-ok", "Compatível"], provavel: ["t-ok", "Provavelmente compatível"],
+                 verificar: ["t-warn", "Verificar compatibilidade"], incompativel: ["t-bad", "Incompatível"] };
+
+function search() {
+  const q = $("#q").value.trim();
+  if (q.length < 2) return;
+  const pq = parseQuery(q);
+  const offers = fetchOffers(pq);
+  const { results, stats } = rank(pq, offers, $("#sort").value, $("#compat").checked);
+  const v = pq.vehicle;
+  const veh = [v.brand, v.model && title(v.model), v.engine, v.year].filter(Boolean).join(" ");
+  const chips = [["Peça", pq.partTerms.join(" ")], ["Veículo", veh], ["Posição", pq.position], ["Lado", pq.side],
+                 ["Marca", pq.partBrand], ["Código", pq.oem.join(", ")]]
+    .filter(([, x]) => x).map(([k, x]) => `<span class="chip">${k}: <b>${esc(x)}</b></span>`).join("");
+  const statHtml = stats.relevant ? `<div class="stats">
+      <div class="stat"><small>Menor preço</small><strong>${brl(stats.min)}</strong></div>
+      <div class="stat"><small>Preço mediano</small><strong>${brl(stats.median)}</strong></div>
+      <div class="stat"><small>Anúncios relevantes</small><strong>${stats.relevant} de ${stats.found}</strong></div></div>` : "";
+  const best = $("#sort").value === "valor";
+  const cards = results.map((r, i) => card(r, best && i === 0)).join("")
+    || '<div class="empty">Nenhum anúncio relevante nos dados de exemplo. Tente pastilha, amortecedor, filtro, correia, vela, bomba, embreagem ou farol.</div>';
+  $("#out").innerHTML = `<div class="chips">${chips}</div>
+    <div class="note">Anúncios fictícios de exemplo. O app completo em Python consulta Google Shopping, Mercado Livre e lojas VTEX de verdade.</div>
+    ${statHtml}<div class="list">${cards}</div>`;
+}
+
+function card(r, best) {
+  const o = r.o, [cls, label] = COMPAT[r.compat];
+  const ship = o.ship == null ? "frete a calcular" : o.ship === 0 ? "frete grátis" : `+ ${brl(o.ship)} frete`;
+  const tags = [`<span class="tag ${cls}">${label}</span>`]
+    .concat(best ? ['<span class="tag t-ok">★ Melhor escolha</span>'] : [])
+    .concat(r.matches.map((m) => `<span class="tag t-neutral">✓ ${esc(m)}</span>`))
+    .concat(r.warnings.map((w) => `<span class="tag t-warn">${esc(w)}</span>`)).join("");
+  return `<div class="card${best ? " best" : ""}">
+    <div><div class="title">${esc(o.title)}</div>
+      <div class="meta">${esc(o.store)}${o.brand ? " · " + esc(o.brand) : ""}${o.ref ? " · ref. " + esc(o.ref) : ""}</div>
+      <div class="tags">${tags}</div></div>
+    <div class="price"><strong>${brl(r.total)}</strong><small>${brl(o.price)} ${ship}</small>
+      <div class="score">custo-benefício ${Math.round(r.value)}</div>
+      <div class="bar"><i style="width:${Math.round(r.value)}%"></i></div></div>
+  </div>`;
+}
+
+$("#f").addEventListener("submit", (e) => { e.preventDefault(); search(); });
+$("#sort").addEventListener("change", search);
+$("#compat").addEventListener("change", search);
+document.querySelectorAll(".ex").forEach((b) => b.addEventListener("click", () => { $("#q").value = b.textContent; search(); }));
+$("#q").value = "pastilha de freio dianteira gol 1.0 2012 cobreq";
+search();
+</script>
