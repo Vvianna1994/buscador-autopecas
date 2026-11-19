@@ -14,7 +14,8 @@ Aplicação web responsiva que pesquisa **somente pelo código da peça**. O flu
 1. Instale o Python 3.10 ou mais novo: https://www.python.org/downloads/. No Windows, **marque "Add Python to PATH"**.
 2. Baixe este projeto (no GitHub: botão verde **Code → Download ZIP**) e descompacte numa pasta.
 3. Dê dois cliques em **`iniciar.bat`** (Windows) ou **`iniciar.command`** (Mac).
-   Na primeira vez, o programa instala tudo sozinho e pede as chaves. Depois, abre o buscador no navegador.
+   Na primeira vez, o programa instala tudo sozinho, pede as chaves e **cria o atalho "Buscador de Autopeças" na área de trabalho**. Depois, abre o buscador no navegador.
+   Das próximas vezes, basta usar o atalho da área de trabalho.
 4. Para trocar as chaves: `trocar_chaves.bat` (Windows) ou `trocar_chaves.command` (Mac).
 
 Para usar o buscador, a janela preta precisa ficar aberta. Fechar a janela encerra o programa.

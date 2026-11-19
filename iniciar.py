@@ -6,6 +6,7 @@ Na primeira vez:
   3. pede as chaves (SerpAPI e Anthropic) e grava no arquivo .env
 Depois: inicia o servidor e abre o navegador em http://localhost:8000
 
+Também cria um atalho na área de trabalho (para recriar: iniciar.py --atalho).
 Para trocar as chaves depois, rode:  iniciar.py --configurar
 """
 
@@ -96,6 +97,48 @@ def configure(force: bool = False) -> None:
         say("Rode de novo com --configurar quando tiver a chave.")
 
 
+def create_shortcut(force: bool = False) -> None:
+    """Cria o atalho "Buscador de Autopeças" na área de trabalho (uma vez só)."""
+    marker = VENV / ".atalho"
+    if marker.exists() and not force:
+        return
+    name = "Buscador de Autopeças"
+    try:
+        if os.name == "nt":
+            target = ROOT / "iniciar.bat"
+            ps = (
+                "$d=[Environment]::GetFolderPath('Desktop');"
+                "$s=(New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $d $env:BA_NAME));"
+                "$s.TargetPath=$env:BA_TARGET;$s.WorkingDirectory=$env:BA_DIR;"
+                "$s.IconLocation=\"$env:SystemRoot\\System32\\shell32.dll,22\";"
+                "$s.Description='Pesquisa de autopeças por código';$s.Save();Write-Output $d"
+            )
+            env = dict(os.environ, BA_NAME=f"{name}.lnk", BA_TARGET=str(target), BA_DIR=str(ROOT))
+            out = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps],
+                                 env=env, capture_output=True, text=True, check=True)
+            where = out.stdout.strip() or "Área de Trabalho"
+        else:
+            desktop = Path.home() / "Desktop"
+            if not desktop.exists():
+                desktop = Path.home() / "Área de Trabalho"
+            desktop.mkdir(exist_ok=True)
+            if sys.platform == "darwin":
+                link = desktop / f"{name}.command"
+                link.write_text(f'#!/bin/bash\ncd "{ROOT}"\n./iniciar.command\n', encoding="utf-8")
+            else:
+                link = desktop / "buscador-autopecas.desktop"
+                link.write_text("[Desktop Entry]\nType=Application\n"
+                                f"Name={name}\nExec=python3 \"{ROOT / 'iniciar.py'}\"\n"
+                                f"Path={ROOT}\nTerminal=true\nIcon=system-search\n", encoding="utf-8")
+            link.chmod(0o755)
+            where = str(desktop)
+        marker.write_text("ok")
+        say(f"      Atalho '{name}' criado na área de trabalho ({where}).")
+    except Exception as e:  # o programa funciona mesmo sem o atalho
+        say(f"      Não foi possível criar o atalho na área de trabalho ({e}).")
+        say(f"      Você pode abrir sempre pelo arquivo iniciar dentro de {ROOT}.")
+
+
 def run_server() -> None:
     url = f"http://localhost:{PORT}"
     say()
@@ -124,6 +167,7 @@ def main() -> int:
         say("Não foi possível instalar as bibliotecas. Verifique a conexão com a internet e tente de novo.")
         return 1
     configure(force="--configurar" in sys.argv)
+    create_shortcut(force="--atalho" in sys.argv)
     if "--so-instalar" in sys.argv:
         return 0
     run_server()
