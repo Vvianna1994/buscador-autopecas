@@ -4,181 +4,114 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Buscador de Autopeças</title>
-<style>
-  :root {
-    --bg: #f6f7f9; --card: #fff; --text: #16181d; --muted: #646a76; --line: #e3e6eb;
-    --accent: #0b6bcb; --ok: #1a7f37; --okbg: #e6f4ea; --warn: #9a6700; --warnbg: #fff4d6;
-    --bad: #c4321c; --badbg: #fde8e4; --chip: #eef2f7;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #111317; --card: #1b1e24; --text: #e8eaed; --muted: #9aa0aa; --line: #2c3038;
-      --accent: #5aa7f5; --ok: #6cd38a; --okbg: #17301f; --warn: #e8b84a; --warnbg: #33290f;
-      --bad: #f08c78; --badbg: #3a1d17; --chip: #252a33;
-    }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-         background: var(--bg); color: var(--text); }
-  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 64px; }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 18px; }
-  form { display: flex; gap: 8px; flex-wrap: wrap; }
-  input[type=search] { flex: 1 1 320px; padding: 12px 14px; font-size: 16px; border-radius: 10px;
-         border: 1px solid var(--line); background: var(--card); color: var(--text); }
-  button { padding: 12px 18px; border: 0; border-radius: 10px; background: var(--accent);
-           color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
-  .controls { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 12px 0 4px;
-              color: var(--muted); font-size: 14px; }
-  select { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line);
-           background: var(--card); color: var(--text); }
-  .examples { font-size: 13px; color: var(--muted); margin-top: 6px; }
-  .examples a { color: var(--accent); cursor: pointer; margin-right: 10px; text-decoration: none; }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 8px; }
-  .chip { background: var(--chip); border-radius: 999px; padding: 4px 10px; font-size: 13px; }
-  .chip b { font-weight: 600; }
-  .sources { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
-  .sources span { margin-right: 12px; white-space: nowrap; }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px; }
-  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
-  .stat small { color: var(--muted); display: block; font-size: 12px; }
-  .stat strong { font-size: 18px; font-variant-numeric: tabular-nums; }
-  .card { display: grid; grid-template-columns: 72px 1fr auto; gap: 14px; align-items: start;
-          background: var(--card); border: 1px solid var(--line); border-radius: 12px;
-          padding: 14px; margin-bottom: 10px; }
-  .card.best { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok) inset; }
-  .thumb { width: 72px; height: 72px; border-radius: 8px; background: var(--chip); object-fit: contain; }
-  .title { font-weight: 600; color: var(--text); text-decoration: none; }
-  .title:hover { text-decoration: underline; }
-  .meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
-  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-  .tag { font-size: 12px; padding: 2px 8px; border-radius: 6px; }
-  .t-ok { background: var(--okbg); color: var(--ok); }
-  .t-warn { background: var(--warnbg); color: var(--warn); }
-  .t-bad { background: var(--badbg); color: var(--bad); }
-  .t-neutral { background: var(--chip); color: var(--muted); }
-  .price { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .price strong { font-size: 20px; display: block; }
-  .price small { color: var(--muted); display: block; font-size: 12px; }
-  .score { margin-top: 6px; font-size: 12px; color: var(--muted); }
-  .bar { height: 4px; background: var(--chip); border-radius: 2px; margin-top: 3px; width: 90px; margin-left: auto; }
-  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
-  .empty, .loading { text-align: center; color: var(--muted); padding: 40px 0; }
-  .demo { background: var(--warnbg); color: var(--warn); padding: 8px 12px; border-radius: 8px;
-          font-size: 13px; margin-bottom: 12px; }
-  @media (max-width: 600px) {
-    .card { grid-template-columns: 56px 1fr; }
-    .thumb { width: 56px; height: 56px; }
-    .price { grid-column: 2; text-align: left; }
-    .bar { margin-left: 0; }
-  }
-</style>
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='9' fill='none' stroke='%23d9480f' stroke-width='3'/><circle cx='12' cy='12' r='3' fill='%23d9480f'/></svg>">
 </head>
 <body>
-<main>
-  <h1>Buscador de Autopeças</h1>
-  <p class="sub">Descreva a peça e o veículo. O buscador consulta várias lojas, confere a compatibilidade e ordena pelo melhor custo-benefício.</p>
+<header class="topbar">
+  <a href="#/" class="logo" aria-label="Início">
+    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="2.6"/></svg>
+    <span>Buscador de Autopeças</span>
+  </a>
+  <nav><a href="#/" data-nav="home">Pesquisar</a><a href="#/config" data-nav="config">Configurações</a></nav>
+</header>
 
-  <form id="f">
-    <input id="q" type="search" placeholder="ex.: pastilha de freio dianteira gol 1.0 2012" autocomplete="off" required>
-    <button>Buscar</button>
-  </form>
-  <div class="examples">Exemplos:
-    <a>pastilha de freio dianteira gol 1.0 2012</a>
-    <a>amortecedor dianteiro gol 2014</a>
-    <a>farol gol 2010 lado direito</a>
-    <a>kit embreagem onix 2016</a>
-  </div>
-  <div class="controls">
-    <label>Ordenar por
-      <select id="sort">
-        <option value="valor">Melhor custo-benefício</option>
-        <option value="preco">Menor preço (com frete)</option>
-        <option value="relevancia">Mais compatível</option>
-      </select>
-    </label>
-    <label><input type="checkbox" id="compat" checked> Esconder incompatíveis</label>
-  </div>
-
-  <div id="out"></div>
+<main id="view-home" class="view">
+  <section class="hero">
+    <h1>Pesquise pelo código da peça</h1>
+    <p class="muted">Informe o código original ou de fabricante. O sistema pesquisa no Google, acessa as lojas encontradas e compara os preços.</p>
+    <form id="search-form" class="search" autocomplete="off">
+      <input id="code" name="code" type="text" inputmode="text" placeholder="Ex.: 881620K021" maxlength="40" required aria-label="Código da peça" spellcheck="false">
+      <button type="submit" class="btn primary">Pesquisar</button>
+    </form>
+    <p id="form-error" class="error" role="alert" hidden></p>
+    <div id="setup-warning" class="notice" hidden></div>
+  </section>
+  <section id="progress" class="progress" hidden aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
+    <div><strong id="progress-stage">Pesquisando…</strong><div id="progress-detail" class="muted small"></div></div>
+  </section>
+  <section class="recent">
+    <h2>Pesquisas recentes</h2>
+    <ul id="recent-list" class="recent-list"><li class="muted">Nenhuma pesquisa ainda.</li></ul>
+  </section>
 </main>
 
-<script>
-const $ = (s) => document.querySelector(s);
-const brl = (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const COMPAT = {
-  confirmada: ["t-ok", "Compatível"],
-  provavel: ["t-ok", "Provavelmente compatível"],
-  verificar: ["t-warn", "Verificar compatibilidade"],
-  incompativel: ["t-bad", "Incompatível"],
-};
-
-async function search() {
-  const q = $("#q").value.trim();
-  if (!q) return;
-  const params = new URLSearchParams({ q, sort: $("#sort").value, only_compatible: $("#compat").checked });
-  history.replaceState(null, "", "?" + new URLSearchParams({ q }));
-  $("#out").innerHTML = '<div class="loading">Consultando lojas…</div>';
-  try {
-    const r = await fetch("/api/search?" + params);
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    render(await r.json());
-  } catch (e) {
-    $("#out").innerHTML = `<div class="empty">Erro na busca: ${esc(e.message)}</div>`;
-  }
-}
-
-function render(data) {
-  const u = data.stats.entendimento;
-  const chips = [["Peça", u.peca], ["Veículo", u.veiculo], ["Posição", u.posicao], ["Lado", u.lado],
-                 ["Marca", u.marca_peca], ["Código", (u.codigos || []).join(", ")]]
-    .filter(([, v]) => v).map(([k, v]) => `<span class="chip">${k}: <b>${esc(v)}</b></span>`).join("");
-  const srcs = data.sources.map((s) => `<span>${s.ok ? "✅" : "⚠️"} ${esc(s.name)}: ${s.ok ? s.count + " anúncios" : esc(s.error)}</span>`).join("");
-  const demo = data.sources.some((s) => s.name === "Demonstração")
-    ? '<div class="demo">Modo demonstração: anúncios fictícios. Configure SERPAPI_KEY, ML_ACCESS_TOKEN ou lojas em stores.json para buscar de verdade.</div>' : "";
-  const st = data.stats;
-  const stats = st.relevantes ? `<div class="stats">
-      <div class="stat"><small>Menor preço</small><strong>${brl(st.menor)}</strong></div>
-      <div class="stat"><small>Preço mediano</small><strong>${brl(st.mediana)}</strong></div>
-      <div class="stat"><small>Anúncios relevantes</small><strong>${st.relevantes} de ${st.encontrados}</strong></div>
-    </div>` : "";
-  const cards = data.results.map((r, i) => card(r, i === 0 && $("#sort").value === "valor")).join("")
-    || '<div class="empty">Nenhum anúncio relevante. Tente descrever a peça de outro jeito.</div>';
-  $("#out").innerHTML = `<div class="chips">${chips}</div><div class="sources">${srcs}</div>${demo}${stats}${cards}`;
-}
-
-function card(r, best) {
-  const o = r.offer;
-  const [cls, label] = COMPAT[r.compatibility];
-  const ship = o.shipping === null ? "frete a calcular" : o.shipping === 0 ? "frete grátis" : `+ ${brl(o.shipping)} frete`;
-  const tags = [`<span class="tag ${cls}">${label}</span>`]
-    .concat(best ? ['<span class="tag t-ok">★ Melhor escolha</span>'] : [])
-    .concat(r.matches.map((m) => `<span class="tag t-neutral">✓ ${esc(m)}</span>`))
-    .concat(r.warnings.map((w) => `<span class="tag t-warn">${esc(w)}</span>`)).join("");
-  const img = o.image ? `<img class="thumb" src="${esc(o.image)}" alt="" loading="lazy">` : '<div class="thumb"></div>';
-  return `<div class="card${best ? " best" : ""}">
-    ${img}
+<main id="view-results" class="view" hidden>
+  <div class="results-head">
     <div>
-      <a class="title" href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.title)}</a>
-      <div class="meta">${esc(o.store)} · via ${esc(o.source)}${o.part_brand ? " · " + esc(o.part_brand) : ""}</div>
-      <div class="tags">${tags}</div>
+      <div class="muted small">Código pesquisado</div>
+      <h1 id="r-code" class="code-title"></h1>
+      <div id="r-collected" class="small"></div>
     </div>
-    <div class="price">
-      <strong>${brl(r.total)}</strong>
-      <small>${brl(o.price)} ${ship}</small>
-      <div class="score">custo-benefício ${Math.round(r.value)}</div>
-      <div class="bar"><i style="width:${Math.round(r.value)}%"></i></div>
+    <div class="head-actions">
+      <button id="r-refresh" class="btn">Atualizar resultados</button>
+      <a href="#/" class="btn ghost">Nova pesquisa</a>
     </div>
-  </div>`;
-}
+  </div>
+  <div id="r-stats" class="stats"></div>
+  <div id="r-warnings"></div>
 
-$("#f").addEventListener("submit", (e) => { e.preventDefault(); search(); });
-$("#sort").addEventListener("change", search);
-$("#compat").addEventListener("change", search);
-document.querySelectorAll(".examples a").forEach((a) => a.addEventListener("click", () => { $("#q").value = a.textContent; search(); }));
-const initial = new URLSearchParams(location.search).get("q");
-if (initial) { $("#q").value = initial; search(); }
-</script>
+  <section class="block">
+    <h2>Referências cruzadas</h2>
+    <p class="muted small">Outros fabricantes que comercializam a mesma peça. A equivalência só é marcada como confirmada quando aparece em catálogo técnico ou em tabelas de referência de vários sites independentes.</p>
+    <div id="r-crossrefs"></div>
+  </section>
+
+  <div class="layout">
+    <aside class="filters" id="filters">
+      <details open id="filters-box">
+        <summary>Filtros e ordenação</summary>
+        <label class="field">Ordenar por
+          <select id="f-sort"><option value="price_asc">Menor preço</option><option value="price_desc">Maior preço</option><option value="relevance">Relevância</option></select>
+        </label>
+        <fieldset><legend>Fabricante</legend><div id="f-brands" class="checks"></div></fieldset>
+        <fieldset><legend>Faixa de preço (R$)</legend>
+          <div class="row2"><input id="f-pmin" type="number" min="0" step="0.01" placeholder="mín."><input id="f-pmax" type="number" min="0" step="0.01" placeholder="máx."></div>
+        </fieldset>
+        <label class="field">Original ou paralelo
+          <select id="f-origin"><option value="">Todos</option><option value="original">Original (montadora)</option><option value="paralelo">Paralelo</option></select>
+        </label>
+        <label class="field">Condição
+          <select id="f-cond"><option value="">Todas</option><option value="novo">Novo</option><option value="usado">Usado</option><option value="recondicionado">Recondicionado</option></select>
+        </label>
+        <fieldset><legend>Classificação do fabricante</legend><div id="f-tiers" class="checks"></div></fieldset>
+        <fieldset><legend>Loja</legend><div id="f-stores" class="checks scroll"></div></fieldset>
+        <label class="check"><input type="checkbox" id="f-confirmed"> Somente referências cruzadas confirmadas</label>
+        <button id="f-clear" class="btn ghost small-btn" type="button">Limpar filtros</button>
+      </details>
+    </aside>
+    <div class="sections">
+      <section class="block"><h2>1. Anúncios do código pesquisado <span id="c-original" class="count"></span></h2><div id="s-original" class="cards"></div></section>
+      <section class="block"><h2>2. Referências cruzadas confirmadas <span id="c-confirmed" class="count"></span></h2><div id="s-confirmed" class="cards"></div></section>
+      <section class="block"><h2>3. Compatíveis a verificar <span id="c-to_verify" class="count"></span></h2>
+        <p class="muted small">Anúncios que citam o código pesquisado ou uma referência não confirmada. Confira a aplicação antes de comprar.</p>
+        <div id="s-to_verify" class="cards"></div></section>
+    </div>
+  </div>
+</main>
+
+<main id="view-config" class="view" hidden>
+  <h1>Configurações e administração</h1>
+  <div class="tabs" role="tablist">
+    <button data-tab="settings" class="tab active">Configurações</button>
+    <button data-tab="searches" class="tab">Pesquisas</button>
+    <button data-tab="failures" class="tab">Falhas de acesso</button>
+    <button data-tab="tokens" class="tab">Consumo de tokens</button>
+    <button data-tab="manufacturers" class="tab">Análises de fabricantes</button>
+  </div>
+  <section data-panel="settings" class="panel">
+    <div id="status-box" class="notice"></div>
+    <form id="settings-form" class="settings"></form>
+    <p id="settings-saved" class="ok small" hidden>Configurações salvas.</p>
+  </section>
+  <section data-panel="searches" class="panel" hidden><div id="t-searches" class="table-wrap"></div></section>
+  <section data-panel="failures" class="panel" hidden><div id="t-failures" class="table-wrap"></div></section>
+  <section data-panel="tokens" class="panel" hidden><div id="t-tokens"></div></section>
+  <section data-panel="manufacturers" class="panel" hidden><div id="t-manufacturers" class="table-wrap"></div></section>
+</main>
+
+<dialog id="modal"><div id="modal-body"></div><form method="dialog"><button class="btn">Fechar</button></form></dialog>
+<script src="/static/app.js"></script>
 </body>
 </html>

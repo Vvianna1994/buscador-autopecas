@@ -1,6 +1,0 @@
-{
-  "_comentario": "Lojas que rodam na plataforma VTEX expõem uma API pública de catálogo. Adicione o domínio de cada loja abaixo. Teste antes com: https://DOMINIO/api/catalog_system/pub/products/search?ft=pastilha",
-  "vtex": [
-    {"name": "Exemplo Loja VTEX", "domain": "www.exemplo-loja.com.br", "enabled": false}
-  ]
-}
